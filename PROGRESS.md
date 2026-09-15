@@ -7,13 +7,13 @@ E-commerce tipo catálogo digital ("Mobile First") de suplementos deportivos. St
 - `NEXT_PUBLIC_SUPABASE_URL=https://sxqmfludltyjnifjngld.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_aXaiIuMvQNbuBMBp1ykNug_APgDFzuT`
 
-## DB Supabase (tablas ya creadas, vacías)
+## DB Supabase (con datos)
 - `categories`: id(uuid), name, slug
 - `products`: id, category_id(fk), name, brand, description, nutritional_info(jsonb), tags(text[]), image_url, is_active
 - `product_variants`: id, product_id(fk), flavor, weight_size, price(numeric), stock(int), is_available
 - `store_settings`: id(int), whatsapp_number, welcome_message, delivery_info
 - **Storage bucket**: `product-images` (lectura pública, escritura autenticada)
-- **No RLS creada aún** — validar antes de deploy
+- **RLS ACTIVA + GRANTs** en las 4 tablas y bucket (sección 7 de `enable_rls.sql`). Seed aplicado (categorías/productos/variantes/settings). Admin user creado vía Auth panel (`admin@furia.com`).
 
 **IMPORTANTE schema gap**: `products` NO tiene columna `slug`. Las URLs usan `slugify(name)` derivado en runtime (➜ refactor pendiente).
 
@@ -63,38 +63,51 @@ CI verde: `npx eslint src/`, `npx tsc --noEmit`, `npx next build` (rutas: `/`, `
 ### Fix loop 307 en admin
 El login vivía en `src/app/admin/login/` → `admin/layout.tsx` lo envolvía y `redirect("/admin/login")` ciclaba en 307 al no haber sesión. Fix: mudado a `src/app/(auth)/login/page.tsx` (rute group → URL `/login`, fuera del árbol protegido). `proxy.ts` simplificado (todo `/admin/*` protegido, destino `/login`), `AdminLogoutButton` → `/login`. Build muestra `/login` estático y `/admin/dashboard` dinámico. ⚠️ el re-login rompe los bookmarks de `/admin/login` (viejos 307 → ahora 404/redirect).
 
-## Completado (Fase 6 — RLS + Seed, parcial)
-**Deploy queda FUERA de alcance por ahora** — primero testing manual.
-
-Archivos nuevos:
+## Completado (Fase 6 — RLS + Seed)
+Archivos:
 - `supabase/seed.sql` — 5 categorías, 4 productos (Whey, Creatina, Pre-Workout, Multivitamínico), variantes con precios ARS/stock (una agotada a propósito), `store_settings id=1` whatsapp `542615939115`. IDs deterministas …-001 …-109 (FK legibles). `image_url` vacío → placeholder "Sin imagen".
-- `supabase/enable_rls.sql` — idempotente: RLS ON en 4 tablas + SELECT público + escritura solo `authenticated`; storage bucket `product-images` SELECT público, INSERT/UPDATE/DELETE autenticado.
+- `supabase/enable_rls.sql` — idempotente: RLS ON en 4 tablas + SELECT público + escritura solo `authenticated`; storage bucket `product-images` SELECT público, INSERT/UPDATE/DELETE autenticado. Incluye **sección 7: GRANTs** (anon SELECT; authenticated SELECT + INSERT/UPDATE/DELETE).
 - `src/app/layout.tsx` — metadata "Furia Suplementos" + `lang="es"`.
+- `next.config.ts` — `allowedDevOrigins: ['192.168.2.201']` (CORS LAN dev).
 
-**Pendiente manual del usuario** (no automatizable sin su cuenta):
-1. Supabase Dashboard → SQL Editor: 1º `supabase/seed.sql`, 2º `supabase/enable_rls.sql`.
-2. Supabase Dashboard → Authentication → Add user: `admin@furia.com` + password.
-3. Testing manual (ver checklist abajo) con `npm run dev`.
+**Ejecutado por el usuario en Supabase Dashboard:** seed + RLS + GRANTs aplicados sin errores; `admin@furia.com` creado en Authentication → Users.
 
-### Fix POST-seed (IMPORTANTE, aplicar ya)
-Síntoma: seed + RLS ejecutados OK, pero el home no muestra productos. Causa: **401 "permission denied for table"** — el rol `anon`/`authenticated` no tenía GRANT de tabla (capas GRANT ≠ RLS; el error se enmascaraba por `if (!data) return null`). Fix ya aplicado en repo:
-- `supabase/enable_rls.sql` — se anexó sección 7 con GRANTs (anon SELECT; authenticated SELECT + INSERT/UPDATE/DELETE). **Volver a pegar el archivo completo en SQL Editor**.
-- Logs de error agregados en `(storefront)/page.tsx`, `(storefront)/layout.tsx` y `product/[slug]/page.tsx` (`const { data, error }` + `console.error`) para que fallos futuros no queden mudos.
-- `next.config.ts` — `allowedDevOrigins: ['192.168.2.201']` (CORS LAN, lo agregó el usuario).
-- `src/app/layout.tsx` — metadata "Furia Suplementos" + `lang="es"`.
+### Fix POST-seed (aplicado)
+Síntoma: seed + RLS OK pero el home no mostraba productos. Causa: **401 "permission denied for table"** — rol `anon`/`authenticated` sin GRANT de tabla (capas GRANT ≠ RLS; el error se enmascaraba por `if (!data) return null`). Fix: GRANTs anexados a `enable_rls.sql` + logs de error en `(storefront)/page.tsx`, `(storefront)/layout.tsx` y `product/[slug]/page.tsx` (`const { data, error }` + `console.error`).
 
-Origen del bug: las tablas se crearon sin GRANTs para anon/authenticated; el 401 existía desde el inicio pero las tablas vacías lo ocultaban (mismo mensaje que "sin resultados").
+### Testing CRUD — resultados y fixes (POST-Fase 6)
+Checklist manual ejecutado (con seed + RLS + GRANTs activos):
+1. Home lista SSR con seed visible ✔ (valida SELECT público)
+2. Login `/login` → `/admin/dashboard` ✔ (sin loop 307)
+3. Ficha `/product/[slug]` + VariantSelector ➜ falta confirmar filtros y carrito (abajo)
+4. Carrito → WhatsApp hacia `wa.me/542615939115` ➜ falta end-to-end
+5. **Crear producto**: sin imagen/variantes → *antes guardaba igual*; con el fix, **bloqueado con mensaje de error** ✔
+6. **Crear completo** (imagen + variantes) ✔
+7. **Editar** ✔ — bug: el select mostraba el **id** en vez del nombre (fix abajo)
+8. **Toggle activo/inactivo** ✔ (desaparece/reaparece en `/`)
+9. **Eliminar** ✔
+10. **Seguridad**: sin login, DELETE vía devtools → ➜ falta el test positivo (debe fallar con 401/403)
 
-Checklist testing manual con RLS activo:
-1. Home lista SSR con seed visible (valida SELECT público).
-2. Filtros search/category/tag.
-3. Ficha `/product/[slug]` (tags, nutricional, VariantSelector).
-4. Carrito → WhatsApp hacia `wa.me/542615939115`.
-5. Login `admin@furia.com` (cookie JWT → rol `authenticated`).
-6. CRUD producto+variantes (escritura RLS).
-7. Upload imagen al bucket.
-8. StockToggle / Delete.
-9. **Seguridad**: sin login, intentar DELETE vía devtools → debe fallar (RLS bloquea anon).
+Bugs encontrados y corregidos durante el testing:
+- **Select de categoría renderizaba el id** (`ProductForm.tsx`) → fix: `<SelectValue>` con **render-prop** `(value) => categories.find(c => c.id === value)?.name ?? ""`. Causa raíz: `Select.Value` de base-ui resuelve el label desde `items` del store; sin `items`, cae a `serializeValue(value)` (muestra el valor crudo).
+- **Sin validación al crear** (`ProductForm.tsx`) → `handleSave` ahora valida: nombre obligatorio, categoría obligatoria, ≥1 variante real (filas vacías filtradas vía `cleanedVariants`), toda variante con precio > 0. `saveVariants(supabase, id, items)` recibe el array limpio (no persiste filas fantasma).
+- **Dashboard sin visibilidad de variantes** (`dashboard/page.tsx`) → columna "Variantes" ahora `N variantes · X disponibles · stock Y`.
+- **Warning Base UI `nativeButton`** (`dashboard/page.tsx`) → botón "Ver" usa `nativeButton={false}` (su `render` es un `<a>`/Link, no un `<button>` nativo).
+
+CI verde tras cada cambio: `npx eslint src/`, `npx next build`.
+
+### Desglose de stock por variante en dashboard
+El "stock Y" de la columna Variantes es el total **solo de variantes activas** (`is_available && stock > 0`, coincide con el contador "disponibles"). Si se quiere el stock individual por variante (ej: "Chocolate 1kg: 15 / Vainilla 1kg: 12") habría que expandir la fila o tooltip — sin decidir.
+
+### Imágenes por variante (pendiente de decisión)
+Hoy 1 imagen por producto (`products.image_url`), compartida por todas sus variantes. Opciones:
+- **A (recomendado)**: mantener 1 imagen por producto — suficiente para suplementos.
+- **B**: columna `image_url` en `product_variants` (nullable, fallback a la del producto). Migración + seed + VariantManager + VariantSelector + ficha + cart.
+
+### Tests manuales que faltan
+- Filtros search/category/tag en `/`.
+- Carrito → WhatsApp end-to-end (`wa.me/542615939115`).
+- **Seguridad (RLS)**: sin login, DELETE/INSERT vía devtools en `products` → debe fallar 401/403 (rol anon sin GRANT de escritura).
 
 ## Pendiente
 ### Fase 6b — Deploy (diferido, luego del testing manual)
@@ -107,6 +120,9 @@ Checklist testing manual con RLS activo:
 - **slug en products**: hoy `slugify(name)` en runtime; si 2 productos comparten nombre colisionan. Ideal: columna `slug` única.
 - **DeleteProductButton no borra la imagen del bucket** → archivos huérfanos (deuda conocida, no bloqueante).
 - **Admin edit de store_settings/categorías**: no hay UI; hoy solo seed/consulta directa.
+
+### Decisión tomada: se mantienen los UUID
+PK/FK quedan como **uuid** (globalmente únicos, no enumerables vía REST, nativos de Postgres; `gen_random_uuid()`). El largo no impacta en UX: las URLs públicas usan `slug`, el uuid solo viaja en carrito/queries. Los ids legibles del seed (…-001) son conveniencia del demo, no producción.
 
 ## Comandos
 - Dev: `npm run dev`

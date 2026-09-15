@@ -87,6 +87,33 @@ export function ProductForm({
   }
 
   const handleSave = async () => {
+    const cleanedVariants = variants
+      .map((v) => ({
+        ...v,
+        flavor: v.flavor.trim(),
+        weight_size: v.weight_size.trim(),
+      }))
+      .filter(
+        (v) => v.flavor || v.weight_size || Number(v.price) > 0 || v.stock !== ""
+      )
+
+    if (!name.trim()) {
+      setError("El nombre del producto es obligatorio.")
+      return
+    }
+    if (!categoryId) {
+      setError("Seleccioná una categoría.")
+      return
+    }
+    if (cleanedVariants.length === 0) {
+      setError("Agregá al menos una variante con precio y stock.")
+      return
+    }
+    if (cleanedVariants.some((v) => !(Number(v.price) > 0))) {
+      setError("Todas las variantes deben tener un precio mayor a cero.")
+      return
+    }
+
     setError(null)
     setLoading(true)
     const supabase = createClient()
@@ -130,7 +157,7 @@ export function ProductForm({
           .eq("id", product.id)
         if (prodError) throw new Error(prodError.message)
 
-        await saveVariants(supabase, product.id)
+        await saveVariants(supabase, product.id, cleanedVariants)
       } else {
         const { data: newProduct, error: prodError } = await supabase
           .from("products")
@@ -147,7 +174,7 @@ export function ProductForm({
           .single()
         if (prodError) throw new Error(prodError.message)
 
-        await saveVariants(supabase, newProduct.id)
+        await saveVariants(supabase, newProduct.id, cleanedVariants)
       }
 
       setOpen(false)
@@ -161,10 +188,11 @@ export function ProductForm({
 
   const saveVariants = async (
     supabase: ReturnType<typeof createClient>,
-    productId: string
+    productId: string,
+    items: VariantInput[]
   ) => {
     const exitIds = new Set(
-      variants.filter((v) => v.id).map((v) => v.id as string)
+      items.filter((v) => v.id).map((v) => v.id as string)
     )
     if (product) {
       const existing = product.product_variants ?? []
@@ -179,7 +207,7 @@ export function ProductForm({
       }
     }
 
-    for (const v of variants) {
+    for (const v of items) {
       const payload = {
         product_id: productId,
         flavor: v.flavor || null,
@@ -255,7 +283,11 @@ export function ProductForm({
               <Label>Categoría</Label>
               <Select value={categoryId} onValueChange={(v) => setCategoryId(v as string)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Seleccionar categoría" />
+                  <SelectValue placeholder="Seleccionar categoría">
+                    {(value) =>
+                      categories.find((c) => c.id === value)?.name ?? ""
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => (

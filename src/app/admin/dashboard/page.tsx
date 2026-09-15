@@ -89,7 +89,30 @@ export default async function AdminDashboardPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {(product.product_variants ?? []).length}
+                        {(() => {
+                          const variants = product.product_variants ?? []
+                          const availableVariants = variants.filter(
+                            (v) => v.is_available && Number(v.stock) > 0
+                          )
+                          const availableStock = availableVariants.reduce(
+                            (sum, v) => sum + Number(v.stock ?? 0),
+                            0
+                          )
+                          return (
+                            <div>
+                              <p className="font-medium">
+                                {variants.length}{" "}
+                                {variants.length === 1
+                                  ? "variante"
+                                  : "variantes"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {availableVariants.length} disponibles · stock{" "}
+                                {availableStock}
+                              </p>
+                            </div>
+                          )
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
