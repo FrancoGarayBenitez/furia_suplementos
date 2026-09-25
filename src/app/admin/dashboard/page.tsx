@@ -22,7 +22,7 @@ export default async function AdminDashboardPage() {
 
   const [{ data: products }, { data: categories }] = await Promise.all([
     supabase.from("products").select(
-      "id, category_id, name, brand, description, tags, image_url, is_active, product_variants(id, product_id, flavor, weight_size, price, stock, is_available)"
+      "id, category_id, name, brand, description, image_url, is_active, product_variants(id, product_id, flavor, weight_size, price, stock, is_available)"
     ),
     supabase.from("categories").select("id, name").order("name"),
   ])

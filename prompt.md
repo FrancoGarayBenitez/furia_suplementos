@@ -26,7 +26,7 @@ El cliente es un emprendimiento de venta de suplementos deportivos (proteínas, 
 El esquema en PostgreSQL ya está creado con las siguientes tablas y reglas RLS:
 
 - `categories`: `id` (UUID), `name` (TEXT), `slug` (TEXT).
-- `products`: `id` (UUID), `category_id` (UUID FK), `name` (TEXT), `brand` (TEXT), `description` (TEXT), `nutritional_info` (JSONB), `tags` (TEXT[]), `image_url` (TEXT), `is_active` (BOOLEAN).
+- `products`: `id` (UUID), `category_id` (UUID FK), `name` (TEXT), `brand` (TEXT), `description` (TEXT), `nutritional_info` (JSONB), `image_url` (TEXT), `is_active` (BOOLEAN).
 - `product_variants`: `id` (UUID), `product_id` (UUID FK), `flavor` (TEXT), `weight_size` (TEXT), `price` (NUMERIC), `stock` (INT), `is_available` (BOOLEAN).
 - `store_settings`: `id` (INT), `whatsapp_number` (TEXT), `welcome_message` (TEXT), `delivery_info` (TEXT).
 - **Storage Bucket:** `product-images` (público para lectura, escritura restringida a usuarios autenticados).
@@ -39,7 +39,7 @@ El esquema en PostgreSQL ya está creado con las siguientes tablas y reglas RLS:
 src/
 ├── app/
 │   ├── (storefront)/        # Layout público (Home, Catálogo, Detalle/Modal, Checkout WA)
-│   │   ├── page.tsx          # Home + Buscador + Filtros de categorías y tags
+│   │   ├── page.tsx          # Home + Buscador + Filtros de categorías
 │   │   └── product/[slug]/  # Ficha de producto (SEO / OpenGraph dinámico)
 │   ├── admin/               # Layout protegido (Backoffice)
 │   │   ├── login/           # Autenticación con Supabase Auth

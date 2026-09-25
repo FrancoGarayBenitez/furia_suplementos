@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { Badge } from "@/components/ui/badge"
 import { VariantSelector } from "@/components/storefront/VariantSelector"
 import { slugify } from "@/lib/utils"
 import type { ProductDetail } from "@/types"
@@ -32,7 +31,7 @@ async function getProductBySlug(slug: string): Promise<ProductDetail | null> {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, category_id, name, brand, description, nutritional_info, tags, image_url, is_active, categories(id, name, slug), product_variants(id, product_id, flavor, weight_size, price, stock, is_available)"
+      "id, category_id, name, brand, description, nutritional_info, image_url, is_active, categories(id, name, slug), product_variants(id, product_id, flavor, weight_size, price, stock, is_available)"
     )
     .eq("is_active", true)
 
@@ -82,16 +81,6 @@ export default async function ProductPage({ params }: Props) {
             </h1>
             <p className="text-sm text-muted-foreground">{product.brand}</p>
           </div>
-
-          {product.tags && product.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {product.tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
 
           <VariantSelector
             productId={product.id}

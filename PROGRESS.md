@@ -9,7 +9,7 @@ E-commerce tipo catálogo digital ("Mobile First") de suplementos deportivos. St
 
 ## DB Supabase (con datos)
 - `categories`: id(uuid), name, slug
-- `products`: id, category_id(fk), name, brand, description, nutritional_info(jsonb), tags(text[]), image_url, is_active
+- `products`: id, category_id(fk), name, brand, description, nutritional_info(jsonb), image_url, is_active
 - `product_variants`: id, product_id(fk), flavor, weight_size, price(numeric), stock(int), is_available
 - `store_settings`: id(int), whatsapp_number, welcome_message, delivery_info
 - **Storage bucket**: `product-images` (lectura pública, escritura autenticada)
@@ -32,7 +32,7 @@ src/
 │   ├── layout.tsx, globals.css (CSS vars shadcn v4)
 │   ├── (storefront)/
 │   │   ├── layout.tsx        # Header/footer, CartProvider, fetch store_settings
-│   │   ├── page.tsx          # Home SSR: search?=category?=tag filtros
+│   │   ├── page.tsx          # Home SSR: search?=category? filtros
 │   │   └── product/[slug]/page.tsx  # Ficha SSR + metadata OG
 │   ├── (auth)/login/page.tsx # /login público (client, fuera de admin/)
 │   └── admin/
@@ -52,7 +52,7 @@ src/
 
 ## Completado (Fases 0–5)
 - **F0**: shadcn init + 16 componentes, cn(), Supabase clients, tipos DB, proxy.ts
-- **F1**: layout storefront, Home SSR con filtros (search/category/tag URL), ProductCard, SearchBar, CategoryFilter, TagFilter
+- **F1**: layout storefront, Home SSR con filtros (search/category URL), ProductCard, SearchBar, CategoryFilter
 - **F2**: ficha product `[slug]` SSR + generateMetadata OG, VariantSelector (sabor/peso → precio/stock)
 - **F3**: useCartStore Zustand, WhatsApp util, CartProvider (drawer, total, envío wa.me)
 - **F4**: login email+pass, admin layout getUser, logout
@@ -105,7 +105,7 @@ Hoy 1 imagen por producto (`products.image_url`), compartida por todas sus varia
 - **B**: columna `image_url` en `product_variants` (nullable, fallback a la del producto). Migración + seed + VariantManager + VariantSelector + ficha + cart.
 
 ### Tests manuales que faltan
-- Filtros search/category/tag en `/`.
+- Filtros search/category en `/`.
 - Carrito → WhatsApp end-to-end (`wa.me/542615939115`).
 - **Seguridad (RLS)**: sin login, DELETE/INSERT vía devtools en `products` → debe fallar 401/403 (rol anon sin GRANT de escritura).
 
@@ -123,6 +123,9 @@ Hoy 1 imagen por producto (`products.image_url`), compartida por todas sus varia
 
 ### Decisión tomada: se mantienen los UUID
 PK/FK quedan como **uuid** (globalmente únicos, no enumerables vía REST, nativos de Postgres; `gen_random_uuid()`). El largo no impacta en UX: las URLs públicas usan `slug`, el uuid solo viaja en carrito/queries. Los ids legibles del seed (…-001) son conveniencia del demo, no producción.
+
+### Etiquetas (tags) eliminadas
+Ninguna referencia queda en el sistema: columna `products.tags` dropeada (`supabase/remove_tags.sql` — pegarlo en SQL Editor), seed sin `tags`, `TagFilter.tsx` borrado, filtro `?tag=` fuera del home, badges de ficha eliminados, input "Etiquetas" fuera del ProductForm, tipo `tags` removido de `src/types/index.ts`.
 
 ## Comandos
 - Dev: `npm run dev`

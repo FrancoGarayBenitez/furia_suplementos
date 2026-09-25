@@ -26,7 +26,6 @@ export interface Database {
           brand: string
           description: string
           nutritional_info: Record<string, unknown> | null
-          tags: string[]
           image_url: string
           is_active: boolean
         }
@@ -37,7 +36,6 @@ export interface Database {
           brand: string
           description: string
           nutritional_info?: Record<string, unknown> | null
-          tags?: string[]
           image_url: string
           is_active?: boolean
         }
@@ -48,7 +46,6 @@ export interface Database {
           brand?: string
           description?: string
           nutritional_info?: Record<string, unknown> | null
-          tags?: string[]
           image_url?: string
           is_active?: boolean
         }

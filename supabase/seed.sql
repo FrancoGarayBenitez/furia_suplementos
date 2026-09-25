@@ -21,7 +21,7 @@ INSERT INTO public.categories (id, name, slug) VALUES
 -- PRODUCTOS  (image_url vacío → la app muestra "Sin imagen")
 -- Los nombres son únicos → slugify() no colisiona
 -- ------------------------------------------------------------
-INSERT INTO public.products (id, category_id, name, brand, description, nutritional_info, tags, image_url, is_active) VALUES
+INSERT INTO public.products (id, category_id, name, brand, description, nutritional_info, image_url, is_active) VALUES
   (
     '00000000-0000-4000-8000-000000000011',
     '00000000-0000-4000-8000-000000000001',
@@ -29,7 +29,6 @@ INSERT INTO public.products (id, category_id, name, brand, description, nutritio
     'Optimum Nutrition',
     'Proteína de suero de leche de rápida absorción. Ideal post-entrenamiento para la recuperación y el mantenimiento de masa muscular. Mezcla fácil con agua, leche o licuados.',
     '{"Porcion": "30 g", "Proteinas": "24 g", "Carbohidratos": "3 g", "Grasas": "1.5 g"}'::jsonb,
-    ARRAY['whey', 'proteina', 'recuperacion'],
     '',
     true
   ),
@@ -40,7 +39,6 @@ INSERT INTO public.products (id, category_id, name, brand, description, nutritio
     'Universal Nutrition',
     'Creatina monohidratada micronizada para aumentar fuerza, potencia y volumen de entrenamiento. Sin sabor, se disuelve en cualquier bebida.',
     '{"Porcion": "5 g", "Creatina": "5 g", "Carbohidratos": "0 g", "Energia": "0 kcal"}'::jsonb,
-    ARRAY['creatina', 'monohidrato', 'fuerza'],
     '',
     true
   ),
@@ -51,7 +49,6 @@ INSERT INTO public.products (id, category_id, name, brand, description, nutritio
     'Cellucor',
     'Pre-entreno energizante con cafeína, beta-alanina y citrulina para mejorar el rendimiento, la concentración y el bombeo muscular durante la sesión.',
     '{"Porcion": "10 g", "Cafeina": "200 mg", "Beta-alanina": "3.2 g", "Citrulina": "6 g"}'::jsonb,
-    ARRAY['preentreno', 'energia', 'bombeo'],
     '',
     true
   ),
@@ -62,7 +59,6 @@ INSERT INTO public.products (id, category_id, name, brand, description, nutritio
     'Nutrilab',
     'Complejo multivitamínico y mineral para cubrir requerimientos diarios. Aporta vitamina D, B12, zinc y magnesio.',
     NULL,
-    ARRAY['vitaminas', 'salud', 'immunidad'],
     '',
     true
   );

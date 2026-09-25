@@ -42,7 +42,6 @@ type ProductFormProps = {
     name: string
     brand: string
     description: string
-    tags: string[]
     image_url: string
     is_active: boolean
     product_variants?: (VariantInput & { is_available: boolean })[]
@@ -64,7 +63,6 @@ export function ProductForm({
   const [brand, setBrand] = useState(product?.brand ?? "")
   const [categoryId, setCategoryId] = useState(product?.category_id ?? "")
   const [description, setDescription] = useState(product?.description ?? "")
-  const [tagsInput, setTagsInput] = useState((product?.tags ?? []).join(", "))
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imageUrl, setImageUrl] = useState(product?.image_url ?? "")
   const [variants, setVariants] = useState<VariantInput[]>(
@@ -117,10 +115,6 @@ export function ProductForm({
     setError(null)
     setLoading(true)
     const supabase = createClient()
-    const tags = tagsInput
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean)
 
     let finalImage = imageUrl
 
@@ -150,7 +144,6 @@ export function ProductForm({
             name,
             brand,
             description,
-            tags,
             image_url: finalImage,
             is_active: product.is_active,
           })
@@ -166,7 +159,6 @@ export function ProductForm({
             name,
             brand,
             description,
-            tags,
             image_url: finalImage,
             is_active: true,
           })
@@ -305,15 +297,6 @@ export function ProductForm({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>Etiquetas (separadas por coma)</Label>
-              <Input
-                value={tagsInput}
-                onChange={(e) => setTagsInput(e.target.value)}
-                placeholder="Sin TACC, Vegano"
               />
             </div>
 

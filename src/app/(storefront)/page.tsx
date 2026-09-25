@@ -1,13 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
 import { SearchBar } from "@/components/storefront/SearchBar"
 import { CategoryFilter } from "@/components/storefront/CategoryFilter"
-import { TagFilter } from "@/components/storefront/TagFilter"
 import { ProductCard } from "@/components/storefront/ProductCard"
 
 type SearchParams = {
   search?: string
   category?: string
-  tag?: string
 }
 
 export default async function StorefrontPage({
@@ -18,18 +16,12 @@ export default async function StorefrontPage({
   const params = await searchParams
   const supabase = await createClient()
 
-  const [{ data: categories, error: categoriesError }, { data: tagsData, error: tagsError }] =
-    await Promise.all([
-      supabase.from("categories").select("id, name, slug").order("name"),
-      supabase.from("products").select("tags"),
-    ])
+  const { data: categories, error: categoriesError } = await supabase
+    .from("categories")
+    .select("id, name, slug")
+    .order("name")
 
   if (categoriesError) console.error("categories:", categoriesError.message)
-  if (tagsError) console.error("tags:", tagsError.message)
-
-  const allTags = Array.from(
-    new Set((tagsData ?? []).flatMap((p) => p.tags ?? []))
-  ).sort()
 
   let categoryId: string | null = null
   if (params.category) {
@@ -42,7 +34,7 @@ export default async function StorefrontPage({
   let query = supabase
     .from("products")
     .select(
-      "id, category_id, name, brand, description, tags, image_url, is_active, product_variants(id, product_id, flavor, weight_size, price, stock, is_available)"
+      "id, category_id, name, brand, description, image_url, is_active, product_variants(id, product_id, flavor, weight_size, price, stock, is_available)"
     )
     .eq("is_active", true)
 
@@ -52,9 +44,6 @@ export default async function StorefrontPage({
   if (params.search) {
     const term = params.search
     query = query.or(`name.ilike.%${term}%,brand.ilike.%${term}%`)
-  }
-  if (params.tag) {
-    query = query.contains("tags", [params.tag])
   }
 
   const { data: products, error: productsError } = await query.order("name")
@@ -73,9 +62,6 @@ export default async function StorefrontPage({
           <SearchBar defaultValue={params.search ?? ""} />
         </div>
         <CategoryFilter categories={categories ?? []} />
-        {allTags.length > 0 && (
-          <TagFilter tags={allTags} activeTag={params.tag ?? null} />
-        )}
       </div>
 
       {products && products.length > 0 ? (
