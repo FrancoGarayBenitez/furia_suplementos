@@ -6,6 +6,7 @@ E-commerce tipo catálogo digital ("Mobile First") de suplementos deportivos. St
 ## Variables env (`.env.local`, ya presentes)
 - `NEXT_PUBLIC_SUPABASE_URL=https://sxqmfludltyjnifjngld.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_aXaiIuMvQNbuBMBp1ykNug_APgDFzuT`
+- `NEXT_PUBLIC_SITE_URL` — **PENDIENTE**: no está seteado. `metadataBase` cae en `http://localhost:3000`; hay que definirlo antes del deploy para que la URL absoluta del OG no resuelva a localhost.
 
 ## DB Supabase (con datos)
 - `categories`: id(uuid), name, slug
@@ -29,10 +30,12 @@ E-commerce tipo catálogo digital ("Mobile First") de suplementos deportivos. St
 src/
 ├── proxy.ts                  # Protege /admin/* (getUser real) → /login
 ├── app/
-│   ├── layout.tsx, globals.css (CSS vars shadcn v4)
+│   ├── layout.tsx, globals.css (tokens shadcn v4 + brand Cobre)
+│   ├── icon.png               # Favicon 512×512 (recorte de la llama)
 │   ├── (storefront)/
-│   │   ├── layout.tsx        # Header/footer, CartProvider, fetch store_settings
-│   │   ├── page.tsx          # Home SSR: search?=category? filtros
+│   │   ├── layout.tsx         # Header/footer, CartProvider, Toaster, fetch store_settings
+│   │   ├── page.tsx           # Home SSR: hero CSS-only + search?=category? filtros
+│   │   ├── opengraph-image.tsx# OG 1200×630 con ImageResponse (logo real embebido)
 │   │   └── product/[slug]/page.tsx  # Ficha SSR + metadata OG
 │   ├── (auth)/login/page.tsx # /login público (client, fuera de admin/)
 │   └── admin/
@@ -109,12 +112,62 @@ Hoy 1 imagen por producto (`products.image_url`), compartida por todas sus varia
 - Carrito → WhatsApp end-to-end (`wa.me/542615939115`).
 - **Seguridad (RLS)**: sin login, DELETE/INSERT vía devtools en `products` → debe fallar 401/403 (rol anon sin GRANT de escritura).
 
+## Completado (Fase 7 — Rediseño visual Dark Cobre)
+
+Rediseño completo mobile-first con estética **Dark Premium Cobre/Titanio**. Sin cambios de lógica de negocio: mismas queries Supabase, mismo `useCartStore`, mismo checkout `wa.me`.
+
+### Decisiones de diseño (acordadas)
+- **Dark-only**: `<html class="dark">`, `colorScheme: "dark"`, `themeColor: #09090B`. La paleta de `:root` (light) queda inerte como shadcn lo requiere.
+- **Semántica de color**: cobre = branding/navegación/links · **naranja `#FF5500` = agregar al carrito** · **verde `#22C55E` = WhatsApp/carrito**. Antes el botón de compra era verde (confundía "Comprar" con "Contactar").
+- Se mantiene Geist; **no** se migra a `next/image` (se conserva `<img>` + `eslint-disable`).
+- `ProductCard` sigue siendo **Server Component** y todo el card es un `Link`; el CTA "Ver opciones" es un `span` (nunca un botón anidado).
+- **Hero CSS-only** (glows + grilla + noise). `images/imagen_marca.jpg` **no** es un hero (es el mismo logo sobre negro) → queda sin usar, no se borra.
+- **OG dinámico** vía `ImageResponse`, no asset estático.
+
+### Paleta (tokens en `globals.css`)
+Brand: `--color-ink #09090B`, `--color-ink-soft #0C0C0E`, `--color-titanium-2 #141417`, `--color-titanium-3 #1C1C21`, escala `--color-copper-{200,300,400,500,600,700}`, `--color-ember`, `--color-neon`, `--color-neon-soft`, `--color-lime`.
+Shadcn: `--primary #D4A373`, `--accent #FF5500`, `--ring #C88A58`, `--secondary #EFD4B8`, borders `white/8` e inputs `white/10`.
+Utilidades nuevas: `glass`, `glass-panel`, `glow-copper`, `glow-ember`, `text-gradient-copper`, `grid-overlay`, `noise`, `no-scrollbar`, `skeleton`.
+
+### Archivos tocados
+- `src/app/globals.css` — reescrito: tokens brand + shadcn, base dark, utilidades.
+- `src/app/layout.tsx` — `class="dark"`, `viewport` tipado, `metadataBase`.
+- `src/app/icon.png` — **nuevo**: favicon 512×512 recortado de la llama.
+- `src/app/(storefront)/layout.tsx` — navbar glass `h-16` con logo, footer con logo completo, `<Toaster />` montado.
+- `src/app/(storefront)/page.tsx` — hero CSS-only + catálogo responsive.
+- `src/app/(storefront)/product/[slug]/page.tsx` — breadcrumb, 2 columnas con imagen sticky, badges de stock, descripción, tabla nutricional.
+- `src/app/(storefront)/opengraph-image.tsx` — **nuevo**: 1200×630, lee `public/brand/logo.png`.
+- `src/components/storefront/ProductCard.tsx`, `SearchBar.tsx`, `CategoryFilter.tsx`, `VariantSelector.tsx` (pills en lugar de `Select`, CTA desktop + barra sticky móvil), `CartProvider.tsx` (drawer derecho, steppers, inputs opcionales).
+- `src/components/ui/button.tsx` (+ variantes `copper|ember|neon`, tamaño `xl`), `badge.tsx` (+ `success|warning|muted`), `sonner.tsx` (theme fijo dark, sin `next-themes`).
+
+### Assets de marca
+- `public/brand/logo.png` — logo oficial `1600×1139` transparente (llama + wordmark gótico + tagline).
+- `public/brand/logo-lockup.png` — **derivado generado** para navbar (recorte sin tagline). ⚠️ generado por análisis de píxeles, **no verificado visualmente**.
+- `src/app/icon.png` — recorte 512×512 de la llama. ⚠️ también sin verificación visual.
+- El logo original es **claro**: sobre superficies oscuras gana contraste. Solo usarlo con `drop-shadow` cobre, nunca con texto al lado.
+
+### Bugs corregidos en esta fase
+- `img src` de `ImageResponse` no acepta `Buffer` con el tipo nuevo de Node (`NonSharedBuffer` no asignable a `Blob`) → se pasa el PNG como data URI base64.
+- `next build` advertía `metadataBase` no seteado (la URL del OG resolvía a localhost) → agregado con fallback a `NEXT_PUBLIC_SITE_URL`.
+- `Toaster` no estaba montado en ningún lado → los toasts de `VariantSelector` no se veían. Montado en `(storefront)/layout.tsx`.
+- `sonner.tsx` usaba `useTheme()` de `next-themes` sin `ThemeProvider` en el árbol → ahora `theme="dark"` fijo.
+- `VariantSelector` usaba `selectedVariant!` (non-null assertion) →derivado a `price`/`stock` opcionales.
+
+### Contraste (WCAG 2.1, verificado con script propio)
+Los 15 pares principales dan **≥ 4.5:1 (AA)**: cobre/ink 8.80:1 · ink/cobre 8.64:1 · ink/ember 6.10:1 · ink/neon 8.58:1 · muted/titanium 7.17:1 · foreground/titanium 17.61:1 · destructive/ink 5.29:1. Sin colores light hardcodeados remanentes (solo overlays `white/5-10` sobre superficie oscura, correctos).
+
+CI verde: `npx eslint src/` (0 errores, 0 warnings) y `npx next build`. Rutas generadas: `/`, `/product/[slug]`, `/icon.png`, `/opengraph-image-utz4wr`, `/login`, `/admin/dashboard`.
+
 ## Pendiente
 ### Fase 6b — Deploy (diferido, luego del testing manual)
 1. Commit → repo GitHub (web; no hay `gh` ni `vercel` CLI instalados) → push.
 2. Import en Vercel → copiar `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` → deploy.
-3. Home con metadata correcta ya lista (name "Furia Suplementos").
+3. **Setear `NEXT_PUBLIC_SITE_URL`** con el dominio real (para la URL absoluta del OG).
 4. Verificar flujo completo en prod (login admin, upload imagen, pedido WhatsApp).
+
+### Verificación visual pendiente
+- Inspeccionar a ojo `public/brand/logo-lockup.png` y `src/app/icon.png` (recortes generados por script, nunca vistos).
+- Smoke test del hero, barra sticky de compra en móvil, drawer del carrito y del OG renderizado.
 
 ### Próximos posibles (post-testing)
 - **slug en products**: hoy `slugify(name)` en runtime; si 2 productos comparten nombre colisionan. Ideal: columna `slug` única.

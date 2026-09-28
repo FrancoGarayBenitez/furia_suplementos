@@ -43,8 +43,45 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Furia Suplementos — tier de marca
+   Cobre / Bronce + acentos de conversión (fuego, neón).
+   Valores hex: fuente de verdad de la identidad. Los modificadores
+   de opacidad (/80) funcionan porque Tailwind v4 emite color-mix().
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  /* Superficies */
+  --color-ink: #09090b;
+  --color-ink-soft: #0c0c0e;
+  --color-titanium: #141417;
+  --color-titanium-2: #1c1c21;
+  --color-titanium-3: #232329;
+
+  /* Cobre / bronce */
+  --color-copper-100: #f7e9da;
+  --color-copper-200: #efd4b8;
+  --color-copper-300: #e0a96d;
+  --color-copper-400: #d4a373;
+  --color-copper-500: #c88a58;
+  --color-copper-600: #a56b3c;
+
+  /* Acento de conversión: fuego eléctrico */
+  --color-ember: #ff5500;
+  --color-ember-soft: #ff8a3d;
+
+  /* Acento de conversión: neón (WhatsApp / carrito) */
+  --color-neon: #22c55e;
+  --color-neon-soft: #4ade80;
+  --color-lime: #84cc16;
+
+  /* Glows */
+  --shadow-glow-copper: 0 8px 40px -8px rgb(212 163 115 / 0.28);
+  --shadow-glow-ember: 0 10px 40px -10px rgb(255 85 0 / 0.45);
+  --shadow-glow-neon: 0 10px 40px -10px rgb(34 197 94 / 0.4);
+}
+
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -71,41 +108,6 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.269 0 0);
@@ -114,11 +116,166 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* Superficie real del sitio. El class="dark" va en <html> (app/layout.tsx):
+   sin él, las utilidades `dark:` de los componentes shadcn no se activan. */
+.dark {
+  color-scheme: dark;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #141417;
+  --card-foreground: #fafafa;
+  --popover: #0c0c0e;
+  --popover-foreground: #fafafa;
+  --primary: #d4a373;
+  --primary-foreground: #0c0c0e;
+  --secondary: #1c1c21;
+  --secondary-foreground: #fafafa;
+  --muted: #1c1c21;
+  --muted-foreground: #a1a1aa;
+  --accent: #2a2320;
+  --accent-foreground: #f7e9da;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: rgb(255 255 255 / 0.08);
+  --input: rgb(255 255 255 / 0.1);
+  --ring: #c88a58;
+  --chart-1: #d4a373;
+  --chart-2: #ff5500;
+  --chart-3: #22c55e;
+  --chart-4: #a56b3c;
+  --chart-5: #e0a96d;
+  --sidebar: #0c0c0e;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #d4a373;
+  --sidebar-primary-foreground: #0c0c0e;
+  --sidebar-accent: #232329;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --sidebar-ring: #c88a58;
+}
+
 @layer base {
   * {
     @apply border-border;
   }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scrollbar-color: var(--color-titanium-3) transparent;
+  }
+
   body {
     @apply bg-background text-foreground;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Scrollbar fina con thumb titanio que vira a cobre al hover */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-titanium-3);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-copper-600);
+  }
+
+  ::selection {
+    background-color: rgb(200 138 88 / 0.35);
+    color: #fafafa;
+  }
+
+  :focus-visible {
+    outline-color: var(--color-copper-400);
+  }
+}
+
+/* Superficies */
+@utility glass {
+  background-color: rgb(9 9 11 / 0.72);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+
+@utility glass-panel {
+  background-color: rgb(20 20 23 / 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Resplandor de marca */
+@utility glow-copper {
+  box-shadow: 0 8px 40px -8px rgb(212 163 115 / 0.28);
+}
+@utility glow-ember {
+  box-shadow: 0 10px 40px -10px rgb(255 85 0 / 0.45);
+}
+@utility glow-neon {
+  box-shadow: 0 10px 40px -10px rgb(34 197 94 / 0.4);
+}
+
+@utility text-gradient-copper {
+  background-image: linear-gradient(
+    100deg,
+    #efd4b8 0%,
+    #d4a373 38%,
+    #c88a58 62%,
+    #efd4b8 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Capas decorativas del hero */
+@utility grid-overlay {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+@utility noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Placeholder de producto sin imagen */
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-titanium-2);
+  &::after {
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgb(212 163 115 / 0.09),
+      transparent
+    );
+    animation: shimmer 2.4s infinite;
+    content: "";
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
   }
 }

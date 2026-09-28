@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { notFound } from "next/navigation"
+import { ChevronRight, ImageOff } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import { Badge } from "@/components/ui/badge"
 import { VariantSelector } from "@/components/storefront/VariantSelector"
 import { slugify } from "@/lib/utils"
 import type { ProductDetail } from "@/types"
@@ -52,34 +55,84 @@ export default async function ProductPage({ params }: Props) {
   }
 
   const variants = product.product_variants ?? []
+  const available = variants.filter((v) => v.is_available && Number(v.stock) > 0)
+  const totalStock = available.reduce((sum, v) => sum + Number(v.stock), 0)
+  const category = product.categories?.[0]
+  const nutrition = Object.entries(product.nutritional_info ?? {})
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <div className="grid gap-8 md:grid-cols-2">
-        <div className="aspect-square overflow-hidden rounded-xl bg-muted">
-          {product.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={product.image_url}
-              alt={product.name}
-              className="h-full w-full object-cover"
+    <div className="mx-auto max-w-6xl px-4 pt-6 pb-28 md:pb-12">
+      <nav aria-label="Miga de pan" className="mb-6 flex items-center gap-1 text-xs text-muted-foreground">
+        <Link href="/" className="transition-colors hover:text-copper-300">
+          Inicio
+        </Link>
+        <ChevronRight className="size-3.5 shrink-0" />
+        {category && (
+          <>
+            <Link
+              href={`/?category=${category.slug}`}
+              className="truncate transition-colors hover:text-copper-300"
+            >
+              {category.name}
+            </Link>
+            <ChevronRight className="size-3.5 shrink-0" />
+          </>
+        )}
+        <span className="truncate text-foreground">{product.name}</span>
+      </nav>
+
+      <div className="grid gap-8 md:grid-cols-2 md:gap-10 lg:gap-14">
+        <div className="md:sticky md:top-24 md:self-start">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-titanium-2 to-ink ring-1 ring-white/8">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-16 bottom-0 h-40 bg-copper-500/15 blur-3xl"
             />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-              Sin imagen
-            </div>
-          )}
+            {product.image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={product.image_url}
+                alt={product.name}
+                className="relative h-full w-full object-contain p-8 sm:p-12"
+              />
+            ) : (
+              <div className="relative flex aspect-square flex-col items-center justify-center gap-3">
+                <div className="skeleton absolute inset-0" />
+                <span className="relative flex size-16 items-center justify-center rounded-full border border-copper-500/25 bg-copper-500/5">
+                  <ImageOff className="size-6 text-copper-500/70" />
+                </span>
+                <span className="relative text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  Sin imagen
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
           <div>
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {product.categories?.[0]?.name ?? ""}
-            </span>
-            <h1 className="mt-1 text-2xl font-bold sm:text-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              {category && (
+                <Link href={`/?category=${category.slug}`}>
+                  <Badge variant="outline" className="border-copper-500/40 text-copper-300">
+                    {category.name}
+                  </Badge>
+                </Link>
+              )}
+              {available.length === 0 ? (
+                <Badge variant="muted">Agotado</Badge>
+              ) : totalStock <= 3 ? (
+                <Badge variant="warning">Últimas {totalStock}</Badge>
+              ) : (
+                <Badge variant="success">Disponible</Badge>
+              )}
+            </div>
+            <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-copper-400/90">
+              {product.brand}
+            </p>
+            <h1 className="mt-2 text-3xl font-black uppercase leading-[1.05] tracking-tight sm:text-4xl">
               {product.name}
             </h1>
-            <p className="text-sm text-muted-foreground">{product.brand}</p>
           </div>
 
           <VariantSelector
@@ -91,28 +144,38 @@ export default async function ProductPage({ params }: Props) {
           />
 
           {product.description && (
-            <div className="mt-4 border-t pt-4">
-              <h2 className="mb-2 font-medium">Descripción</h2>
-              <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+            <section className="border-t border-white/8 pt-5">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-copper-400">
+                Descripción
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
                 {product.description}
               </p>
-            </div>
+            </section>
           )}
 
-          {product.nutritional_info &&
-            Object.keys(product.nutritional_info).length > 0 && (
-              <div className="mt-4 border-t pt-4">
-                <h2 className="mb-2 font-medium">Información nutricional</h2>
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  {Object.entries(product.nutritional_info).map(([k, v]) => (
-                    <div key={k} className="flex justify-between border-b pb-1">
-                      <dt className="text-muted-foreground">{k}</dt>
-                      <dd className="font-medium">{String(v)}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            )}
+          {nutrition.length > 0 && (
+            <section className="border-t border-white/8 pt-5">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-copper-400">
+                Información nutricional
+              </h2>
+              <dl className="mt-3 overflow-hidden rounded-2xl bg-titanium/50 ring-1 ring-white/8">
+                {nutrition.map(([key, value], i) => (
+                  <div
+                    key={key}
+                    className={`flex items-center justify-between gap-4 px-4 py-2.5 text-sm ${
+                      i > 0 ? "border-t border-white/6" : ""
+                    }`}
+                  >
+                    <dt className="text-muted-foreground">{key}</dt>
+                    <dd className="text-right font-medium text-foreground">
+                      {String(value)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
         </div>
       </div>
     </div>
