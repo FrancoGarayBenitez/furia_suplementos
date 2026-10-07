@@ -43,7 +43,7 @@ src/
 │       └── dashboard/page.tsx # Tabla productos + CRUD
 ├── components/
 │   ├── ui/ (shadcn: button,input,badge,card,dialog,select,switch,label,sheet,tabs,table,sonner,textarea,avatar,dropdown-menu,separator)
-│   ├── storefront/ (ProductCard, SearchBar, CategoryFilter, TagFilter, VariantSelector, CartProvider)
+│   ├── storefront/ (ProductCard, SearchBar, CategoryFilter, VariantSelector, CartProvider)
 │   └── admin/ (ProductForm, VariantManager, StockToggle, DeleteProductButton, AdminLogoutButton)
 ├── lib/
 │   ├── utils.ts              # cn(), slugify()
@@ -151,12 +151,14 @@ Utilidades nuevas: `glass`, `glass-panel`, `glow-copper`, `glow-ember`, `text-gr
 - `next build` advertía `metadataBase` no seteado (la URL del OG resolvía a localhost) → agregado con fallback a `NEXT_PUBLIC_SITE_URL`.
 - `Toaster` no estaba montado en ningún lado → los toasts de `VariantSelector` no se veían. Montado en `(storefront)/layout.tsx`.
 - `sonner.tsx` usaba `useTheme()` de `next-themes` sin `ThemeProvider` en el árbol → ahora `theme="dark"` fijo.
-- `VariantSelector` usaba `selectedVariant!` (non-null assertion) →derivado a `price`/`stock` opcionales.
+- `VariantSelector` usaba `selectedVariant!` (non-null assertion) → derivado a `price`/`stock` opcionales.
 
 ### Contraste (WCAG 2.1, verificado con script propio)
 Los 15 pares principales dan **≥ 4.5:1 (AA)**: cobre/ink 8.80:1 · ink/cobre 8.64:1 · ink/ember 6.10:1 · ink/neon 8.58:1 · muted/titanium 7.17:1 · foreground/titanium 17.61:1 · destructive/ink 5.29:1. Sin colores light hardcodeados remanentes (solo overlays `white/5-10` sobre superficie oscura, correctos).
 
 CI verde: `npx eslint src/` (0 errores, 0 warnings) y `npx next build`. Rutas generadas: `/`, `/product/[slug]`, `/icon.png`, `/opengraph-image-utz4wr`, `/login`, `/admin/dashboard`.
+
+**Cierre de fase**: commit `113bd71 Rediseño ux/ui` (19 archivos, +1214/−361, incluye los 4 assets binarios: `logo.png`, `logo-lockup.png`, `icon.png`, `imagen_marca.jpg`). Diseño **aprobado por el usuario**. Typecheck de la fase validado vía `next build` (no `tsc --noEmit` suelto, ver `Comandos`).
 
 ## Pendiente
 ### Fase 6b — Deploy (diferido, luego del testing manual)
