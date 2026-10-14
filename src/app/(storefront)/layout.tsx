@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { MessageCircle } from "lucide-react"
+import { Lock, MessageCircle } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { CartProvider } from "@/components/storefront/CartProvider"
 import { Toaster } from "@/components/ui/sonner"
@@ -126,8 +126,17 @@ export default async function StorefrontLayout({ children }: LayoutProps<"/">) {
           </div>
 
           <div className="mt-10 border-t border-white/8 pt-6 text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Furia Suplementos. Todos los derechos
-            reservados.
+            <Link
+              href="/login"
+              className="mb-3 inline-flex items-center gap-1.5 transition-colors hover:text-copper-400"
+            >
+              <Lock className="size-3" />
+              Admin
+            </Link>
+            <p>
+              © {new Date().getFullYear()} Furia Suplementos. Todos los derechos
+              reservados.
+            </p>
           </div>
         </div>
       </footer>
