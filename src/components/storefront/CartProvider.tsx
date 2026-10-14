@@ -17,13 +17,13 @@ import { buildOrderMessage, buildWhatsAppUrl, formatPrice } from "@/lib/utils/wh
 
 type CartProviderProps = {
   whatsappNumber: string
-  welcomeMessage?: string
+  cartWelcomeMessage?: string
   deliveryInfo?: string
 }
 
 export function CartProvider({
   whatsappNumber,
-  welcomeMessage,
+  cartWelcomeMessage,
   deliveryInfo,
 }: CartProviderProps) {
   const [open, setOpen] = useState(false)
@@ -40,7 +40,7 @@ export function CartProvider({
   const handleSend = () => {
     const message = buildOrderMessage(
       items,
-      { welcome: welcomeMessage, deliveryInfo },
+      { cartWelcome: cartWelcomeMessage, deliveryInfo },
       { name: name || undefined, delivery: delivery || undefined }
     )
     window.open(buildWhatsAppUrl(whatsappNumber, message), "_blank")

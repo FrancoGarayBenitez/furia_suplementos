@@ -84,18 +84,21 @@ export interface Database {
           id: number
           whatsapp_number: string
           welcome_message: string
+          cart_welcome_message: string
           delivery_info: string
         }
         Insert: {
           id?: number
           whatsapp_number: string
           welcome_message: string
+          cart_welcome_message: string
           delivery_info: string
         }
         Update: {
           id?: number
           whatsapp_number?: string
           welcome_message?: string
+          cart_welcome_message?: string
           delivery_info?: string
         }
       }

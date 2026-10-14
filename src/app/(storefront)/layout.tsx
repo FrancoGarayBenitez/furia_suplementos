@@ -18,8 +18,10 @@ export const metadata: Metadata = {
 function formatPhone(raw: string) {
   const d = raw.replace(/\D/g, "")
   if (!d) return ""
-  const local = d.startsWith("54") ? d.slice(2) : d
-  return `+54 ${local.slice(0, 2)} ${local.slice(2, 6)}-${local.slice(6)}`
+  const local = d.startsWith("549") ? d.slice(3) : d.startsWith("54") ? d.slice(2) : d
+  const area = local.slice(0, 3)
+  const rest = local.slice(3)
+  return `${area} ${rest.slice(0, 3)}-${rest.slice(3)}`
 }
 
 export default async function StorefrontLayout({ children }: LayoutProps<"/">) {
@@ -72,7 +74,7 @@ export default async function StorefrontLayout({ children }: LayoutProps<"/">) {
             )}
             <CartProvider
               whatsappNumber={whatsappNumber}
-              welcomeMessage={settings?.welcome_message}
+              cartWelcomeMessage={settings?.cart_welcome_message}
               deliveryInfo={settings?.delivery_info}
             />
           </div>

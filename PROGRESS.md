@@ -6,13 +6,13 @@ E-commerce tipo catálogo digital ("Mobile First") de suplementos deportivos. St
 ## Variables env (`.env.local`, ya presentes)
 - `NEXT_PUBLIC_SUPABASE_URL=https://sxqmfludltyjnifjngld.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_aXaiIuMvQNbuBMBp1ykNug_APgDFzuT`
-- `NEXT_PUBLIC_SITE_URL` — **PENDIENTE**: no está seteado. `metadataBase` cae en `http://localhost:3000`; hay que definirlo antes del deploy para que la URL absoluta del OG no resuelva a localhost.
+- `NEXT_PUBLIC_SITE_URL=https://furia-suplementos.vercel.app` — seteado en **Vercel** (no en `.env.local`); `metadataBase` usa esta URL absoluta para el OG.
 
 ## DB Supabase (con datos)
 - `categories`: id(uuid), name, slug
 - `products`: id, category_id(fk), name, brand, description, nutritional_info(jsonb), image_url, is_active
 - `product_variants`: id, product_id(fk), flavor, weight_size, price(numeric), stock(int), is_available
-- `store_settings`: id(int), whatsapp_number, welcome_message, delivery_info
+- `store_settings`: id(int), whatsapp_number, welcome_message, cart_welcome_message, delivery_info
 - **Storage bucket**: `product-images` (lectura pública, escritura autenticada)
 - **RLS ACTIVA + GRANTs** en las 4 tablas y bucket (sección 7 de `enable_rls.sql`). Seed aplicado (categorías/productos/variantes/settings). Admin user creado vía Auth panel (`admin@furia.com`).
 
@@ -39,12 +39,13 @@ src/
 │   │   └── product/[slug]/page.tsx  # Ficha SSR + metadata OG
 │   ├── (auth)/login/page.tsx # /login público (client, fuera de admin/)
 │   └── admin/
-│       ├── layout.tsx        # getUser → redirect si no auth, logout
-│       └── dashboard/page.tsx # Tabla productos + CRUD
+│       ├── layout.tsx        # getUser → redirect /login, nav, Toaster
+│       ├── dashboard/page.tsx # Tabla productos + CRUD
+│       └── settings/page.tsx  # Datos tienda (SettingsForm)
 ├── components/
 │   ├── ui/ (shadcn: button,input,badge,card,dialog,select,switch,label,sheet,tabs,table,sonner,textarea,avatar,dropdown-menu,separator)
 │   ├── storefront/ (ProductCard, SearchBar, CategoryFilter, VariantSelector, CartProvider)
-│   └── admin/ (ProductForm, VariantManager, StockToggle, DeleteProductButton, AdminLogoutButton)
+│   └── admin/ (ProductForm, VariantManager, StockToggle, DeleteProductButton, AdminLogoutButton, SettingsForm)
 ├── lib/
 │   ├── utils.ts              # cn(), slugify()
 │   ├── store/useCartStore.ts # Zustand persist "furia-cart"
@@ -160,12 +161,22 @@ CI verde: `npx eslint src/` (0 errores, 0 warnings) y `npx next build`. Rutas ge
 
 **Cierre de fase**: commit `113bd71 Rediseño ux/ui` (19 archivos, +1214/−361, incluye los 4 assets binarios: `logo.png`, `logo-lockup.png`, `icon.png`, `imagen_marca.jpg`). Diseño **aprobado por el usuario**. Typecheck de la fase validado vía `next build` (no `tsc --noEmit` suelto, ver `Comandos`).
 
+## Completado (Fase 6b — Deploy en producción)
+**Estado: EN PRODUCCIÓN.** Dominio: `https://furia-suplementos.vercel.app` (Vercel Hobby, gratis).
+
+Pasos ejecutados:
+1. Repo GitHub (`FrancoGarayBenitez/furia_suplementos`) pusheado a `origin/master` (HEAD branch: master).
+2. Vercel Hobby → importar proyecto → conectó Git automáticamente (checklist 1/5).
+3. **Settings → Environment Variables** (3): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`.
+4. Supabase Dashboard → **Authentication → URL Configuration**: Site URL + Redirect URLs → `https://furia-suplementos.vercel.app`.
+5. Deploy inicial: pestaña **Deployments → Deploy** (manual, branch `master`) → estado Ready.
+6. Verificación en prod: home con seed, ficha, `/login` → dashboard, OG con dominio correcto.
+
+**Flujo de actualización (auto-deploy):** cada `git push` a `master` dispara rebuild en Vercel → actualiza producción (~1–3 min con cache). Ramas otras → preview deployments (`*.vercel.app`). Env vars: se cambian en Vercel → **Redeploy** manual (Deployments → ⋯ → Redeploy, sin cache).
+
+**Sin custom domain** (decisión): se usa el subdominio `*.vercel.app` gratuito.
+
 ## Pendiente
-### Fase 6b — Deploy (diferido, luego del testing manual)
-1. Commit → repo GitHub (web; no hay `gh` ni `vercel` CLI instalados) → push.
-2. Import en Vercel → copiar `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` → deploy.
-3. **Setear `NEXT_PUBLIC_SITE_URL`** con el dominio real (para la URL absoluta del OG).
-4. Verificar flujo completo en prod (login admin, upload imagen, pedido WhatsApp).
 
 ### Verificación visual pendiente
 - Inspeccionar a ojo `public/brand/logo-lockup.png` y `src/app/icon.png` (recortes generados por script, nunca vistos).
@@ -174,13 +185,31 @@ CI verde: `npx eslint src/` (0 errores, 0 warnings) y `npx next build`. Rutas ge
 ### Próximos posibles (post-testing)
 - **slug en products**: hoy `slugify(name)` en runtime; si 2 productos comparten nombre colisionan. Ideal: columna `slug` única.
 - **DeleteProductButton no borra la imagen del bucket** → archivos huérfanos (deuda conocida, no bloqueante).
-- **Admin edit de store_settings/categorías**: no hay UI; hoy solo seed/consulta directa.
+- **Admin edit de categorías**: no hay UI; hoy solo seed/consulta directa.
 
 ### Decisión tomada: se mantienen los UUID
 PK/FK quedan como **uuid** (globalmente únicos, no enumerables vía REST, nativos de Postgres; `gen_random_uuid()`). El largo no impacta en UX: las URLs públicas usan `slug`, el uuid solo viaja en carrito/queries. Los ids legibles del seed (…-001) son conveniencia del demo, no producción.
 
 ### Etiquetas (tags) eliminadas
-Ninguna referencia queda en el sistema: columna `products.tags` dropeada (`supabase/remove_tags.sql` — pegarlo en SQL Editor), seed sin `tags`, `TagFilter.tsx` borrado, filtro `?tag=` fuera del home, badges de ficha eliminados, input "Etiquetas" fuera del ProductForm, tipo `tags` removido de `src/types/index.ts`.
+Ninguna referencia queda en el sistema: columna `products.tags` dropeada (`supabase/remove_tags.sql` — **ejecutado** en SQL Editor), seed sin `tags`, `TagFilter.tsx` borrado, filtro `?tag=` fuera del home, badges de ficha eliminados, input "Etiquetas" fuera del ProductForm, tipo `tags` removido de `src/types/index.ts`.
+
+## Completado (Fase 8 — Settings admin + WhatsApp)
+
+### store_settings editable desde admin
+- **Nuevo `store_settings.cart_welcome_message`** — separa el saludo del link de contacto del home (`welcome_message`) del saludo de pedido del cart (`cart_welcome_message`). Antes el mismo mensaje se reutilizaba en ambos contextos → confusión.
+  - Migración: `supabase/add_cart_welcome.sql` (idempotente, default `'¡Hola! Te paso mi pedido.'`). RLS/GRANTs ya cubren la tabla.
+  - Seed actualizado con `cart_welcome_message`.
+  - `whatsapp.ts` `buildOrderMessage` usa `cartWelcome` (cart). Home sigue con `welcome_message`.
+  - **Pendiente en prod:** ejecutar `supabase/add_cart_welcome.sql`.
+- **Ruta `/admin/settings`** (`settings/page.tsx`) + `SettingsForm.tsx` — el admin edita `whatsapp_number`, `welcome_message`, `cart_welcome_message`, `delivery_info` sin tocar DB. Mismo patrón client supabase que `StockToggle` (RLS ya permite escritura `authenticated`).
+  - Campo WhatsApp: prefijo fijo `+54 9` (span) + input solo dígitos → admin tipea área + número. Guarda `549` + dígitos (E.164).
+  - Validación: número requerido (≥8 dígitos), toasts success/error.
+- **Número de WhatsApp actualizado** → `5492612580755` (Mendoza) en seed.
+- **`<Toaster />` montado en `admin/layout.tsx`** — antes los toasts del admin no se renderizaban (solo estaba en storefront).
+- **Fix bug `formatPhone`** (`(storefront)/layout.tsx`) — asumía área de 2 dígitos (Mendoza `261` = 3) → renderizaba `+54 9 26 1258-0755` (roto). Ahora formato local sin país: `261 258-0755` (split fijo `3-3-4`). Header + footer heredan.
+- **Fix redirect admin** — `admin/layout.tsx` apuntaba a `/admin/login` (404) → corregido a `/login`.
+
+CI verde tras cada cambio: `npx eslint src/`, `npx tsc --noEmit`, `npx next build`. Rutas: `/`, `/product/[slug]`, `/login`, `/admin/dashboard`, `/admin/settings`.
 
 ## Comandos
 - Dev: `npm run dev`

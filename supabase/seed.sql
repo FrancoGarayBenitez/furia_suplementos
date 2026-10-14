@@ -84,5 +84,5 @@ INSERT INTO public.product_variants (id, product_id, flavor, weight_size, price,
 -- ------------------------------------------------------------
 -- STORE SETTINGS  (la app lee la única fila: .limit(1).maybeSingle())
 -- ------------------------------------------------------------
-INSERT INTO public.store_settings (id, whatsapp_number, welcome_message, delivery_info) VALUES
-  (1, '542615939115', '¡Hola! Te preparamos tu pedido de Furia Suplementos.', 'Hacemos envíos a todo el país. CABA y GBA sin cargo de demora. Consultá disponibilidad para el resto.');
+INSERT INTO public.store_settings (id, whatsapp_number, welcome_message, cart_welcome_message, delivery_info) VALUES
+  (1, '5492612580755', '¡Hola! Te preparamos tu pedido de Furia Suplementos.', '¡Hola! Te paso mi pedido.', 'Hacemos envíos a todo el país. CABA y GBA sin cargo de demora. Consultá disponibilidad para el resto.');

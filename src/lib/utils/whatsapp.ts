@@ -11,13 +11,13 @@ export function formatPrice(value: number): string {
 
 export function buildOrderMessage(
   items: CartItem[],
-  settings: { welcome?: string; deliveryInfo?: string },
+  settings: { cartWelcome?: string; deliveryInfo?: string },
   details?: OrderDetails
 ): string {
   const lines: string[] = []
 
-  if (settings.welcome) {
-    lines.push(settings.welcome)
+  if (settings.cartWelcome) {
+    lines.push(settings.cartWelcome)
     lines.push("")
   }
 
